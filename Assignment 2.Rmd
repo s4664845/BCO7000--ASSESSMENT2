@@ -1,0 +1,170 @@
+---
+title: "Assignment2"
+author: "Yalan S4664845"
+date: "21/03/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Part1
+
+#_Yalan Huang_ **s664845**
+-------------------------------
+
+##Assignment 2
+-------------------------------
+
+```{r}
+# Part2
+library(tidyverse)
+library(knitr)
+library(skimr)
+
+thanksgiving_meal <-read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv')
+
+###Display the first 10 rows of the data set using `kable()` function
+
+kable(thanksgiving_meal[1:10,1:65])
+
+###Using `skim()` display the summary of variables. 
+
+skim(thanksgiving_meal)
+
+###Think about the task to predict a family income based on their menu
+
+### The variable of main_dish, gender,us_region and age are suitable for predict family income.Because people who have high family income are highly possible to spent more money on food. Secondly, The family income is related to their age.People who have more working experiences can get extra payment. All of them are not correct type. We have to use as_factor function to change them to factor type.
+
+#Use `fct_reorder` and `parse_number` functions to create a factor variable `family_income`
+
+New_family_income <- thanksgiving_meal %>%
+  mutate(family_income = fct_reorder(family_income, parse_number(family_income)))
+
+
+#What is the number of people who celebrate
+
+thanksgiving_meal %>%
+  filter(celebrate == "Yes") %>%
+  count(celebrate)
+
+#What are categories and insights for each main dish served and the method it is prepared?
+
+thanksgiving_meal %>%
+  group_by(main_dish) %>%
+  count(main_prep,sort = TRUE) 
+
+##This result means most of customer choose Turkey as main dish and they prefer to choose Baked as prepared method,followed by roasted.
+
+#Create 3 different data viz showing insights for main dish served and the method. Provide your own legend and use themes.
+
+##First data viz
+
+thanksgiving_meal %>%
+  ggplot(aes(main_dish,fill=main_dish)) +
+  geom_bar() +
+  coord_flip() +
+  labs(x = "Main Dish", y = "Number of Main Dish ", colour = "Main Dish Type",
+      title = "Bar Chart", caption = "Figure 1")
+
+#This bar chart shows total number of main dish ordered by customer
+
+##Second data viz
+  
+thanksgiving_meal %>%
+  ggplot(aes(main_prep,fill=main_dish)) +
+  geom_bar() +
+  labs(x = "Main Preparation Method", y = "Number of Main Preparation", colour = "Main Dish Type",
+       title = "Bar Chart", caption = "Figure 2")
+
+# This bar chart shows the number of main dish that prepare in each method 
+
+##Third data viz
+
+thanksgiving_meal %>%
+  ggplot(aes(main_prep,fill=main_prep)) +
+  geom_bar() +
+  coord_flip() +
+  labs(x = "Main Prep", y = "Number of Main Prep ", colour = "Prep Type",
+       title = "Bar Chart", caption = "Figure 3")
+
+# This bar chart shows the number of prepared method
+
+#How many use cranberry sauce? How many use gravy
+thanksgiving_meal %>%
+  count(cranberry) 
+###828 main dish use cranberry
+
+thanksgiving_meal %>%
+  count(gravy)
+### 892 main dish use gravy
+
+#What is the distribution of those who celebrate across income ranges
+
+thanksgiving_meal %>%
+  filter(celebrate=="Yes") %>%
+  arrange() %>%
+  ggplot(aes(family_income, fill= family_income))+
+  geom_bar()+
+  coord_flip()+
+  labs(x = "Family Income Range", y = "Total Number", colour ="Family Income",
+       title = "Bar Chart")
+
+##Firstly we use filter function to choose customer who celebrate thanks giving.Then choose geom_bar to map the number of each range.fill with color is supposed to make the bar chart clear.
+
+
+#Use the following code to create a new data set
+
+new_data<-thanksgiving_meal %>%
+  select(id, starts_with("side"), 
+         starts_with("pie"), 
+         starts_with("dessert")) %>%
+  select(-side15, -pie13, -dessert12) %>%
+  gather(type, value, -id) %>%
+  filter(!is.na(value), !value %in% c("None", "Other (please specify)")) %>%
+  mutate(type = str_remove(type, "\\d+"))
+
+##Firstly, we choose variable of side,pie and dessert. Then we delete side15, pie13 and dessert12 which is not on the menu. Use gather to create columns type,value and id. Fill column with value which is not "NA", "None","Other(please specify)". Finally, create type variable and remove string  with digit for type variable.
+
+#Intall package `widyr` and use `pairwise_cor()` 
+
+#install.packages("widyr")
+library(widyr)
+
+thanksgiving_meal %>%
+  pairwise_cor(main_dish, id, sort = TRUE)
+
+##This is to examine correlation among words, which indicates how often they appear together relative to how often they appear separately.
+
+#Use `lm()` or randomForest() function to build a model
+
+library(tidymodels)
+library(skimr)
+library(modeldata)
+library(randomForest)
+skim(New_family_income)
+
+familyincome <- randomForest(family_income ~age, data=New_family_income,na.action=na.omit)
+print(familyincome)
+
+familyincome <- randomForest(family_income ~ gender+community_type, data= New_family_income,na.action=na.omit)
+print(familyincome)
+
+familyincome <- randomForest(family_income ~ us_region + travel + community_type, data= New_family_income,na.action=na.omit)
+print(familyincome)
+
+##first model we choose age as input variable, the error rate is 81.76%, which is high level.
+##Second model we choose gender and community type,the error rate is 83.53%, which is higher than only one variable. I think that those two variables is less related to family income.
+## Third model with 84.32% error rate,which means those three variable is not related to family income.
+
+#Write 2 sentences explaining which model os best.
+
+#The best model is the first one.Because the error rate is the lowest. 
+
+
+
+
+
+```
+
